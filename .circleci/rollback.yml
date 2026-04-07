@@ -1,0 +1,57 @@
+version: 2.1
+
+orbs:
+  kubernetes: circleci/kubernetes@1.3.1
+
+jobs:
+  rollback:
+    docker:
+      - image: cimg/base:stable
+    environment:
+      COMPONENT_NAME: << pipeline.deploy.component_name >>
+      ENVIRONMENT_NAME: << pipeline.deploy.environment_name >>
+      TARGET_VERSION: << pipeline.deploy.target_version >>
+    steps:
+      - kubernetes/install_kubectl
+      - kubernetes/install_kubeconfig:
+          kubeconfig: KUBECONFIG_DATA
+      - run:
+          name: Plan rollback release
+          command: |
+            circleci run release plan \
+              --component-name=$COMPONENT_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --target-version=$TARGET_VERSION \
+              --rollback
+      - kubernetes/rollback:
+          resource_name: deployment/rolling-tutorial-app
+          get_rollout_status: true
+          watch_rollout_status: true
+          watch_timeout: 5m
+      - run:
+          name: Mark rollback as SUCCESS
+          command: circleci run release update --status=SUCCESS
+          when: on_success
+      - run:
+          name: Mark rollback as FAILED
+          command: circleci run release update --status=FAILED
+          when: on_fail
+
+  cancel-rollback:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Mark rollback as CANCELED
+          command: circleci run release update --status=CANCELED
+
+workflows:
+  rollback:
+    jobs:
+      - rollback:
+          context: rolling-tutorial
+      - cancel-rollback:
+          context: rolling-tutorial
+          requires:
+            - rollback:
+              - canceled

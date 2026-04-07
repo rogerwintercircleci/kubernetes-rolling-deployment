@@ -1,0 +1,12 @@
+{
+  "name": "rolling-tutorial-app",
+  "version": "1.0.0",
+  "description": "Sample app for the CircleCI rolling deployment on Kubernetes tutorial",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

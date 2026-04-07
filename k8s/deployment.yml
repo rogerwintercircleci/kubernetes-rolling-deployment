@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rolling-tutorial-app
+  namespace: default
+  annotations:
+    circleci.com/project-id: ${CIRCLE_PROJECT_ID}
+    circleci.com/operation-timeout: 10m
+  labels:
+    app: rolling-tutorial-app
+    circleci.com/component-name: rolling-tutorial-app
+    circleci.com/version: ${IMAGE_TAG}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rolling-tutorial-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: rolling-tutorial-app
+        circleci.com/component-name: rolling-tutorial-app
+        circleci.com/version: ${IMAGE_TAG}
+    spec:
+      containers:
+        - name: rolling-tutorial-app
+          image: ${DOCKERHUB_USERNAME}/rolling-tutorial-app:${IMAGE_TAG}
+          ports:
+            - containerPort: 3000
+          env:
+            - name: APP_VERSION
+              value: "${IMAGE_TAG}"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10

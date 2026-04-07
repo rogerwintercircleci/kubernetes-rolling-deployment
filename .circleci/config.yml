@@ -1,0 +1,72 @@
+version: 2.1
+
+orbs:
+  kubernetes: circleci/kubernetes@1.3.1
+
+jobs:
+  build-and-push:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Docker image
+          command: |
+            docker build -t $DOCKERHUB_USERNAME/rolling-tutorial-app:$CIRCLE_SHA1 ./app
+      - run:
+          name: Push to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push $DOCKERHUB_USERNAME/rolling-tutorial-app:$CIRCLE_SHA1
+
+  deploy:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - kubernetes/install_kubectl
+      - kubernetes/install_kubeconfig:
+          kubeconfig: KUBECONFIG_DATA
+      - run:
+          name: Install envsubst
+          command: sudo apt-get update -qq && sudo apt-get install -y gettext-base
+      - run:
+          name: Plan release
+          command: |
+            circleci run release plan \
+              --component-name=rolling-tutorial-app \
+              --environment-name=production \
+              --target-version=$CIRCLE_SHA1
+      - run:
+          name: Apply Kubernetes manifests
+          command: |
+            export IMAGE_TAG=$CIRCLE_SHA1
+            envsubst < k8s/deployment.yml | kubectl apply -f -
+            kubectl apply -f k8s/service.yml
+      - kubernetes/get_rollout_status:
+          resource_name: deployment/rolling-tutorial-app
+          watch_rollout_status: true
+          watch_timeout: 5m
+      - run:
+          name: Mark release as SUCCESS
+          command: circleci run release update --status=SUCCESS
+          when: on_success
+      - run:
+          name: Mark release as FAILED
+          command: circleci run release update --status=FAILED
+          when: on_fail
+
+workflows:
+  build-deploy:
+    jobs:
+      - build-and-push:
+          context: rolling-tutorial
+      - deploy:
+          requires:
+            - build-and-push
+          context: rolling-tutorial
+          filters:
+            branches:
+              only: main
