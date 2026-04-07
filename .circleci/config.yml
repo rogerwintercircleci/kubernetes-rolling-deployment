@@ -26,7 +26,7 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - kubernetes/install_kubectl
+      - kubernetes/install
       - kubernetes/install_kubeconfig:
           kubeconfig: KUBECONFIG_DATA
       - run:
