@@ -1,4 +1,4 @@
-# kubernetes-rolling-deployment
+# kubernetes-rolling-deployment-circleci
 
 Sample application for the CircleCI tutorial: **How to Set Up Rolling Deployments on Kubernetes with CircleCI**.
 
