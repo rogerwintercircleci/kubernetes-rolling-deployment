@@ -54,7 +54,7 @@ jobs:
             kubectl apply -f k8s/service.yml
       - run:
           name: Monitor rollout
-          command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
+          command: kubectl rollout status deployment/rolling-tutorial-app --timeout=2m
       - run:
           name: Update deployment status to running
           command: circleci run release update "${CIRCLE_JOB}" --status=RUNNING
