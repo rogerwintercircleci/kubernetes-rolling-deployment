@@ -2,8 +2,6 @@
 
 Sample application for the CircleCI tutorial: **How to Set Up Rolling Deployments on Kubernetes with CircleCI**.
 
-Read the full tutorial: https://circleci.com/blog/rolling-deployment-kubernetes-tutorial/
-
 ## What's in this repo
 
 ```
