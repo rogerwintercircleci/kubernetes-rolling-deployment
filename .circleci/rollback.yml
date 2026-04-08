@@ -22,21 +22,43 @@ jobs:
             echo "$KUBECONFIG_DATA" | tr -d '[:space:]' | base64 --decode > ~/.kube/config
             chmod 600 ~/.kube/config
       - run:
+          name: Plan rollback release
+          command: |
+            circleci run release plan "${CIRCLE_JOB}" \
+              --component-name=${COMPONENT_NAME} \
+              --environment-name=${ENVIRONMENT_NAME} \
+              --target-version=${TARGET_VERSION} \
+              --rollback
+      - run:
           name: Roll back deployment
           command: kubectl rollout undo deployment/rolling-tutorial-app
       - run:
           name: Monitor rollback rollout
           command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
       - run:
-          name: Log rollback marker
-          command: |
-            circleci run release log \
-              --component-name=$COMPONENT_NAME \
-              --environment-name=$ENVIRONMENT_NAME \
-              --target-version=$TARGET_VERSION
+          name: Update rollback status to SUCCESS
+          command: circleci run release update "${CIRCLE_JOB}" --status=SUCCESS
+          when: on_success
+      - run:
+          name: Update rollback status to FAILED
+          command: circleci run release update "${CIRCLE_JOB}" --status=FAILED
+          when: on_fail
+
+  cancel-rollback:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Update rollback status to CANCELED
+          command: circleci run release update "${CIRCLE_JOB}" --status=CANCELED
 
 workflows:
   rollback:
     jobs:
       - rollback:
           context: rolling-tutorial
+      - cancel-rollback:
+          context: rolling-tutorial
+          requires:
+            - rollback:
+              - canceled
