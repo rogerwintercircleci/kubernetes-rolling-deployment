@@ -24,6 +24,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Plan deployment
+          command: |
+            circleci run release plan "${CIRCLE_JOB}" \
+              --environment-name="production" \
+              --component-name="rolling-tutorial-app" \
+              --target-version="$CIRCLE_SHA1"
+      - run:
           name: Install kubectl
           command: |
             KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
@@ -49,12 +56,23 @@ jobs:
           name: Monitor rollout
           command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
       - run:
+          name: Update deployment status to running
+          command: circleci run release update "${CIRCLE_JOB}" --status=RUNNING
+      - run:
           name: Log deploy marker
           command: |
             circleci run release log \
               --component-name=rolling-tutorial-app \
               --environment-name=production \
               --target-version=$CIRCLE_SHA1
+      - run:
+          name: Update deployment status to success
+          command: circleci run release update "${CIRCLE_JOB}" --status=SUCCESS
+          when: on_success
+      - run:
+          name: Update deployment status to failed
+          command: circleci run release update "${CIRCLE_JOB}" --status=FAILED
+          when: on_fail
 
 workflows:
   build-deploy:
