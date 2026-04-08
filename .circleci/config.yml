@@ -34,7 +34,7 @@ jobs:
           name: Configure kubeconfig
           command: |
             mkdir -p ~/.kube
-            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+            echo "$KUBECONFIG_DATA" | tr -d '[:space:]' | base64 --decode > ~/.kube/config
             chmod 600 ~/.kube/config
       - run:
           name: Install envsubst
@@ -45,7 +45,7 @@ jobs:
             circleci run release plan \
               --component-name=rolling-tutorial-app \
               --environment-name=production \
-              --target-version=$CIRCLE_SHA1
+              --target-version=$CIRCLE_SHA1 || true
       - run:
           name: Apply Kubernetes manifests
           command: |
@@ -57,11 +57,11 @@ jobs:
           command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
       - run:
           name: Mark release as SUCCESS
-          command: circleci run release update --status=SUCCESS
+          command: circleci run release update --status=SUCCESS || true
           when: on_success
       - run:
           name: Mark release as FAILED
-          command: circleci run release update --status=FAILED
+          command: circleci run release update --status=FAILED || true
           when: on_fail
 
 workflows:
