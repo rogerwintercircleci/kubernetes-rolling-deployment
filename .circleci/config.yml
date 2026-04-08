@@ -40,13 +40,6 @@ jobs:
           name: Install envsubst
           command: sudo apt-get update -qq && sudo apt-get install -y gettext-base
       - run:
-          name: Plan release
-          command: |
-            circleci run release plan \
-              --component-name=rolling-tutorial-app \
-              --environment-name=production \
-              --target-version=$CIRCLE_SHA1 || true
-      - run:
           name: Apply Kubernetes manifests
           command: |
             export IMAGE_TAG=$CIRCLE_SHA1
@@ -56,13 +49,12 @@ jobs:
           name: Monitor rollout
           command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
       - run:
-          name: Mark release as SUCCESS
-          command: circleci run release update --status=SUCCESS || true
-          when: on_success
-      - run:
-          name: Mark release as FAILED
-          command: circleci run release update --status=FAILED || true
-          when: on_fail
+          name: Log deploy marker
+          command: |
+            circleci run release log \
+              --component-name=rolling-tutorial-app \
+              --environment-name=production \
+              --target-version=$CIRCLE_SHA1
 
 workflows:
   build-deploy:
