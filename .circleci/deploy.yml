@@ -1,74 +1,64 @@
-# This is a template CircleCI deploy config
-# that shows how to use deploy markers to track deployments.
-# You can edit this template to add your custom deployment logic.
-
 version: 2.1
 
 jobs:
-  deploy-component:
+  rollback:
     docker:
-      - image: cimg/base:current
+      - image: cimg/base:stable
     environment:
       COMPONENT_NAME: << pipeline.deploy.component_name >>
-      NAMESPACE: << pipeline.deploy.namespace >>
       ENVIRONMENT_NAME: << pipeline.deploy.environment_name >>
       TARGET_VERSION: << pipeline.deploy.target_version >>
     steps:
-      - checkout
-      - attach_workspace:
-          at: .
-
-      # This step will create a new deploy with PENDING status
-      # that will show up in the deploys tab in the UI
       - run:
-          name: Plan release of deploy release
+          name: Install kubectl
           command: |
-            circleci run release plan  \
-              --environment-name=${ENVIRONMENT_NAME} \
-              --namespace=${NAMESPACE} \
+            KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+            curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+            chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl
+      - run:
+          name: Configure kubeconfig
+          command: |
+            mkdir -p ~/.kube
+            echo "$KUBECONFIG_DATA" | tr -d '[:space:]' | base64 --decode > ~/.kube/config
+            chmod 600 ~/.kube/config
+      - run:
+          name: Plan rollback release
+          command: |
+            circleci run release plan "${CIRCLE_JOB}" \
               --component-name=${COMPONENT_NAME} \
-              --target-version=${TARGET_VERSION}
-
+              --environment-name=${ENVIRONMENT_NAME} \
+              --target-version=${TARGET_VERSION} \
+              --rollback
       - run:
-          name: Perform deployment
-          command:
-            # Add here your custom logic to perform the deployment
-
-      # These last two steps update the PENDING deployment marker
-      # to SUCCESS or FAILED, based on the outcome of the job.
+          name: Roll back deployment
+          command: kubectl rollout undo deployment/rolling-tutorial-app
       - run:
-          name: Update planned release to SUCCESS
-          command: |
-            circleci run release update \
-              --status=SUCCESS
+          name: Monitor rollback rollout
+          command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
+      - run:
+          name: Update rollback status to SUCCESS
+          command: circleci run release update "${CIRCLE_JOB}" --status=SUCCESS
           when: on_success
       - run:
-          name: Update planned release to FAILED
-          command: |
-            circleci run release update \
-             --status=FAILED \
+          name: Update rollback status to FAILED
+          command: circleci run release update "${CIRCLE_JOB}" --status=FAILED
           when: on_fail
 
-  # This job handles the cancellation of the deploy marker
-  # if the deploy job is canceled
-  cancel-deploy:
+  cancel-rollback:
     docker:
-      - image: cimg/base:current
+      - image: cimg/base:stable
     steps:
       - run:
-          name: Update planned release to CANCELED
-          command: |
-            circleci run release update \
-             --status=CANCELED
+          name: Update rollback status to CANCELED
+          command: circleci run release update "${CIRCLE_JOB}" --status=CANCELED
 
 workflows:
-  deploy:
+  rollback:
     jobs:
-      - deploy-component
-      - cancel-deploy:
+      - rollback:
+          context: rolling-tutorial
+      - cancel-rollback:
+          context: rolling-tutorial
           requires:
-            - deploy-component:
+            - rollback:
               - canceled
-          filters:
-            branches:
-              only: main
