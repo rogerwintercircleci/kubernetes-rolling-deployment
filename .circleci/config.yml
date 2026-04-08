@@ -59,6 +59,13 @@ jobs:
           name: Update deployment status to running
           command: circleci run release update "${CIRCLE_JOB}" --status=RUNNING
       - run:
+          name: Log deploy marker
+          command: |
+            circleci run release log \
+              --component-name=rolling-tutorial-app \
+              --environment-name=production \
+              --target-version=$CIRCLE_SHA1
+      - run:
           name: Update deployment status to success
           command: circleci run release update "${CIRCLE_JOB}" --status=SUCCESS
           when: on_success
