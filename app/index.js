@@ -41,13 +41,13 @@ function renderPage() {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(0, 200, 83, 0.08);
-      border: 1px solid rgba(0, 200, 83, 0.25);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
       border-radius: 100px;
       padding: 6px 18px;
       font-size: 12px;
       font-weight: 600;
-      color: #00c853;
+      color: #818cf8;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       margin-bottom: 28px;
@@ -55,7 +55,7 @@ function renderPage() {
     .dot {
       width: 7px;
       height: 7px;
-      background: #00c853;
+      background: #818cf8;
       border-radius: 50%;
       animation: pulse 2s ease-in-out infinite;
     }
@@ -120,7 +120,7 @@ function renderPage() {
       Deployment Successful
     </div>
     <h1>Rolling Deployment Demo</h1>
-    <p class="subtitle">Kubernetes &nbsp;·&nbsp; CircleCI &nbsp;·&nbsp; Node.js</p>
+    <p class="subtitle">Kubernetes &nbsp;·&nbsp; CircleCI &nbsp;·&nbsp; Node.js &nbsp;·&nbsp; v2</p>
     <div class="meta">
       <div class="row">
         <span class="label">Version</span>
