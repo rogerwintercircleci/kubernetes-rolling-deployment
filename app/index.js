@@ -120,7 +120,7 @@ function renderPage() {
       Deployment Successful
     </div>
     <h1>Rolling Deployment Demo</h1>
-    <p class="subtitle">Kubernetes &nbsp;·&nbsp; CircleCI &nbsp;·&nbsp; Node.js &nbsp;·&nbsp; v6</p>
+    <p class="subtitle">Kubernetes &nbsp;·&nbsp; CircleCI &nbsp;·&nbsp; Node.js &nbsp;·&nbsp; v7</p>
     <div class="meta">
       <div class="row">
         <span class="label">Version</span>
