@@ -120,7 +120,7 @@ function renderPage() {
       Deployment Successful
     </div>
     <h1>Rolling Deployment Demo</h1>
-    <p class="subtitle">Kubernetes &nbsp;·&nbsp; CircleCI &nbsp;·&nbsp; Node.js &nbsp;·&nbsp; v7</p>
+    <p class="subtitle">Kubernetes &nbsp;·&nbsp; CircleCI &nbsp;·&nbsp; Node.js</p>
     <div class="meta">
       <div class="row">
         <span class="label">Version</span>
@@ -164,7 +164,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Keep JSON API endpoint for programmatic access
   if (req.url === '/api') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
