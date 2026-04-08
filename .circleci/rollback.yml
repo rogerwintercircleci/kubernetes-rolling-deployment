@@ -14,22 +14,13 @@ jobs:
           command: |
             KUBECTL_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
             curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-            chmod +x kubectl
-            sudo mv kubectl /usr/local/bin/kubectl
+            chmod +x kubectl && sudo mv kubectl /usr/local/bin/kubectl
       - run:
           name: Configure kubeconfig
           command: |
             mkdir -p ~/.kube
-            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+            echo "$KUBECONFIG_DATA" | tr -d '[:space:]' | base64 --decode > ~/.kube/config
             chmod 600 ~/.kube/config
-      - run:
-          name: Plan rollback release
-          command: |
-            circleci run release plan \
-              --component-name=$COMPONENT_NAME \
-              --environment-name=$ENVIRONMENT_NAME \
-              --target-version=$TARGET_VERSION \
-              --rollback
       - run:
           name: Roll back deployment
           command: kubectl rollout undo deployment/rolling-tutorial-app
@@ -37,29 +28,15 @@ jobs:
           name: Monitor rollback rollout
           command: kubectl rollout status deployment/rolling-tutorial-app --timeout=5m
       - run:
-          name: Mark rollback as SUCCESS
-          command: circleci run release update --status=SUCCESS
-          when: on_success
-      - run:
-          name: Mark rollback as FAILED
-          command: circleci run release update --status=FAILED
-          when: on_fail
-
-  cancel-rollback:
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - run:
-          name: Mark rollback as CANCELED
-          command: circleci run release update --status=CANCELED
+          name: Log rollback marker
+          command: |
+            circleci run release log \
+              --component-name=$COMPONENT_NAME \
+              --environment-name=$ENVIRONMENT_NAME \
+              --target-version=$TARGET_VERSION
 
 workflows:
   rollback:
     jobs:
       - rollback:
           context: rolling-tutorial
-      - cancel-rollback:
-          context: rolling-tutorial
-          requires:
-            - rollback:
-              - canceled
